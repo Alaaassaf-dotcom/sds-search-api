@@ -60,19 +60,26 @@ def find_sds_pdf_urls(product_name, brand, manufacturer):
 
 
 def extract_pdf_text(pdf_url):
+    if not PDF_SUPPORT:
+        return None, False
     try:
-       try:
-    import PyPDF2
-    PDF_SUPPORT = True
-except ImportError:
-    PDF_SUPPORT = False
-def is_valid_sds(text):
-    if not text:
-        return False
-    text_lower = text.lower()
-    required_keywords = ["section 1", "section 2", "hazard", "safety data sheet", "identification"]
-    matches = sum(1 for kw in required_keywords if kw in text_lower)
-    return matches >= 3
+        resp = requests.get(pdf_url, headers=HEADERS, timeout=TIMEOUT, stream=True)
+        content_type = resp.headers.get("Content-Type", "").lower()
+        if resp.status_code == 200 and ("pdf" in content_type or pdf_url.lower().endswith(".pdf")):
+            pdf_bytes = io.BytesIO(resp.content)
+            reader = PyPDF2.PdfReader(pdf_bytes)
+            text = ""
+            for page in reader.pages[:20]:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "
+"
+            if len(text) > 500:
+                return text, True
+    except Exception as e:
+        print(f"PDF extraction error for {pdf_url}: {e}")
+    return None, False
+
 
 
 def extract_h_codes(text):

@@ -61,25 +61,11 @@ def find_sds_pdf_urls(product_name, brand, manufacturer):
 
 def extract_pdf_text(pdf_url):
     try:
-        import pdfplumber
-        resp = requests.get(pdf_url, headers=HEADERS, timeout=TIMEOUT, stream=True)
-        content_type = resp.headers.get("Content-Type", "").lower()
-        if resp.status_code == 200 and ("pdf" in content_type or pdf_url.lower().endswith(".pdf")):
-            pdf_bytes = io.BytesIO(resp.content)
-            text = ""
-            with pdfplumber.open(pdf_bytes) as pdf:
-                for page in pdf.pages[:20]:
-                    page_text = page.extract_text()
-                    if page_text:
-                        text += page_text + "
-"
-            if len(text) > 500:
-                return text, True
-    except Exception as e:
-        print(f"PDF extraction error for {pdf_url}: {e}")
-    return None, False
-
-
+       try:
+    import PyPDF2
+    PDF_SUPPORT = True
+except ImportError:
+    PDF_SUPPORT = False
 def is_valid_sds(text):
     if not text:
         return False
